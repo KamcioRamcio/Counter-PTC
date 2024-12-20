@@ -1,0 +1,52 @@
+LIBRARY ieee;
+USE ieee.std_logic_1164.all; 
+
+entity AddSub8bit is
+	port (
+		clk : in std_logic; --zegar
+		reset: in std_logic; --reset
+		SW : in std_logic_vector(17 downto 0); --wektor wejściowy
+		RESULT : out std_logic_vector(7 downto 0); --wynik
+		OVERFLOW : out std_logic; --przepełnienie
+		load_a : in std_logic; --sygnal ladowania rejestru a
+		load_b : in std_logic; --sygnal ladowania rejestru b
+		load_reult : in std_logic; --sygnal ladowania rejestru result
+		add_sub : in std_logic; --dodawanie = '0' odejmowanie = '1'
+	)
+end AddSub8bit;
+
+architecture behavioral of AddSub8bit is
+	signal A_reg, B_reg, RESULT_reg : std_logic_vector(7 downto 0); --rejestry liczb wejsciowych i wyniku
+	signal B_final : std_logic_vector(7 downto 0); -- liczba b ostateczna po ewentualnej zmianie na uzupełnieniowy
+	signal RESULT_tmp : std_logic_vector(8 downto 0); -- tymczasowy wynik z uwzglednionym przeniesieniem
+	signal carry_in : std_logic; -- przeniesieniem
+	signal OVERFLOW_reg : std_logic; -- rejestr przepelnienia
+
+begin
+-- rejestr A, ładowanie liczby przy zboczu zegarowym
+	process(clk, reset)
+		begin
+			if reset = '1' then
+				A_reg <= (others => '0')
+			elsif rising_edge(clk) then
+				if load_a = '1' then
+					A_reg <= SW(15 downto 8); 
+				end if
+			end if
+	end process
+-- rejestr B, ładowanie liczby przy zboczu zegarowym
+	process(clk, reset)
+		begin
+			if reset = '1' then
+				B_reg <= (others => '0')
+			elsif rising_edge(clk) then
+				if load_b = '1' then
+					B_reg <= SW(7 downto 0); 
+				end if
+			end if
+	end process
+		
+-- ewentualna zmiana liczby B na kod uzupełneiniowy w przypadku odejmowania
+	process(B_reg, add_sub)
+		begin 
+			if add_sub = '1'
